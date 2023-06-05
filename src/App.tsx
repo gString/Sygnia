@@ -1,13 +1,22 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import PageHeader from "./components/PageHeader.tsx";
 import Table from "./components/Table.tsx";
-import {AddBtn, Container, FilterBtn, Filters, Header, Headline} from "./App.styles.ts";
+import {
+    AddBtn,
+    Container,
+    FilterBtn,
+    Filters,
+    Header,
+    Headline
+} from "./App.styles.ts";
 import {Priorities, Task} from "./types.ts";
+import AddTaskModal from "./components/AddTaskModal.tsx";
 
 function App() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
     const [sortTerm, setSortTerm] = useState<keyof Task>("priority");
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     const sortedList = useMemo(() => tasks.length ? tasks.sort((a:Task,b:Task) => {
         if (a[sortTerm] > b[sortTerm]) {
@@ -75,18 +84,44 @@ function App() {
 
     const handleSort = (key: keyof Task) => setSortTerm(key);
 
+    const changePriority = (id: Task["id"], priority: Task["priority"]) => {
+        setTasks(prevState => {
+            return prevState.map(task => {
+                if (task.id !== id) return task;
+                return {...task, priority};
+            })
+        })
+    }
+
+    const handleToggleModal = () => setIsModalOpen(!isModalOpen);
+
+    const handleAddTask = (priority: Task["priority"], title: string) => {
+        const now = Date.now();
+        const newTask: Task = {
+            id: now.toString(),
+            priority,
+            created_at: now / 1000,
+            title,
+            status: "incomplete"
+        }
+        setTasks(prevState => [...prevState, newTask]);
+        handleToggleModal();
+    }
+
     return (
         <Container>
             <PageHeader priorities={prioritySum}/>
             <Header>
                 <Headline>To Do List</Headline>
-                <AddBtn><span>+</span> Add task</AddBtn>
+                <AddBtn onClick={handleToggleModal}><span>+</span> Add task</AddBtn>
                 <FilterToggle />
             </Header>
             {Boolean(filteredList.length) && <Table list={filteredList}
                                                     sortTerm={sortTerm}
                                                     toggleComplete={toggleComplete}
-                                                    handleSort={handleSort}/>}
+                                                    handleSort={handleSort}
+                                                    changePriority={changePriority} />}
+            {isModalOpen && <AddTaskModal toggleModal={handleToggleModal} addTask={handleAddTask}/>}
         </Container>
     )
 }

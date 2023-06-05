@@ -24,6 +24,7 @@ interface Props {
     toggleComplete: (id: string) => void;
     handleSort: (key: keyof Task) => void;
     sortTerm: keyof Task;
+    changePriority: (id: Task["id"], priority: Task["priority"]) => void;
 }
 
 interface HeaderProps {
@@ -31,7 +32,7 @@ interface HeaderProps {
     title: string;
 }
 
-export default function Table({list, toggleComplete, handleSort, sortTerm}: Props): ReactElement {
+export default function Table({list, toggleComplete, handleSort, sortTerm, changePriority}: Props): ReactElement {
 
     const clickHandler = useCallback((key: keyof Task) => () => handleSort(key), [handleSort]);
 
@@ -59,11 +60,12 @@ export default function Table({list, toggleComplete, handleSort, sortTerm}: Prop
                     {list && list.map(task => {
                         const dateText = getDateText(task.created_at);
                         const handleClick = () => toggleComplete(task.id);
+                        const handlePriorityChange = (priority: Task["priority"]) => changePriority(task.id, priority);
                         return (<tr key={task.id}>
                                 <td><CheckBox isChecked={task.status === 'complete'} handleClick={handleClick}/></td>
                                 <td>{task.title}</td>
                                 <td>{dateText}</td>
-                                <td><Priority level={task.priority}/></td>
+                                <td><Priority level={task.priority} handlePriorityChange={handlePriorityChange}/></td>
                             </tr>
                         )
                     })}
