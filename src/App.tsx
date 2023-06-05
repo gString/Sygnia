@@ -1,84 +1,25 @@
-import {useEffect, useMemo, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import PageHeader from "./components/PageHeader.tsx";
-import styled from "styled-components";
 import Table from "./components/Table.tsx";
-
-const Container = styled.div`
-  background-color: #f5f5f5;
-  height: 100vh;
-  width: 100%;
-  border: 1px solid green;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid red;
-`;
-
-const Header = styled.header`
-  display: flex;
-  align-items: center;
-  height: 116px;
-`;
-
-const Headline = styled.h1`
-  text-transform: uppercase;
-  font-size: 32px;
-  font-weight: 400;
-  margin: 0 28px 0 66px;
-`;
-
-const AddBtn = styled.button`
-  background-color: #000;
-  border-radius: 8px;
-  color: #fff;
-  border: none;
-  outline: none;
-  padding: 0;
-  height: 32px;
-  width: 128px;
-  font-weight: 400;
-  font: var(--munito-font);
-  font-size: 16px;
-
-  span {
-    font-weight: 200;
-    font-size: 20px;
-    padding: 0 2px;
-  }
-`;
-
-const Filters = styled.div`
-  width: 244px;
-  height: 32px;
-  background-color: #d5d5d5;
-  margin: 0 64px 0 auto;
-  border-radius: 8px;
-`;
-
-const FilterBtn = styled(AddBtn)`
-  width: 122px;
-  background-color: transparent;
-  cursor: pointer;
-
-  &:disabled {
-    background-color: #000;
-    cursor: auto;
-  }
-}
-`;
-
-export interface Task {
-    id: string;
-    priority: 1 | 2 | 3;
-    created_at: number;
-    title: string;
-    status: "incomplete" | "complete";
-}
+import {AddBtn, Container, FilterBtn, Filters, Header, Headline} from "./App.styles.ts";
+import {Priorities, Task} from "./types.ts";
 
 function App() {
     const [tasks, setTasks] = useState<Task[]>([]);
     const [isFiltered, setIsFiltered] = useState(false);
+    const [sortTerm, setSortTerm] = useState<keyof Task>("priority");
 
-    const filteredList = useMemo(() => isFiltered ? tasks.filter(task => task.status !== "complete") : tasks, [isFiltered, tasks]);
+    const sortedList = useMemo(() => tasks.length ? tasks.sort((a:Task,b:Task) => {
+        if (a[sortTerm] > b[sortTerm]) {
+            return 1;
+        } else if (a[sortTerm] < b[sortTerm]) {
+            return -1;
+        } else {
+            return 0;
+        }
+    }) : [], [sortTerm, tasks]);
+
+    const filteredList = useMemo(() => isFiltered ? sortedList.filter(task => task.status !== "complete") : sortedList, [isFiltered, sortedList]);
 
     const FilterToggle = () => {
         return <Filters>
@@ -87,6 +28,31 @@ function App() {
         </Filters>
     }
 
+    const getPriorityName = (currentTask: Task): keyof Priorities => {
+        switch (currentTask.priority) {
+            case 1:
+                return "low";
+            case 2:
+                return "medium";
+            default:
+                return "high";
+        }
+    }
+
+    const priorityReducer = useCallback((tasks: Task[]) => {
+        const initialValue: Priorities = { low: 0, medium: 0, high: 0, };
+
+        return tasks.reduce(
+            (result: Priorities, currentTask: Task) => {
+                const priorityName = getPriorityName(currentTask);
+                result[priorityName]++;
+                return result;
+            }, initialValue);
+    }, []);
+
+    const prioritySum = useMemo(() => {
+        return tasks.length ? priorityReducer(tasks) : null;
+    }, [tasks, priorityReducer]);
 
     useEffect(() => {
         fetch('https://hor23frby6.execute-api.us-east-1.amazonaws.com/prod/todos', {
@@ -100,26 +66,27 @@ function App() {
 
     const toggleComplete = (id: Task["id"]) => {
         setTasks(prevState => {
-            const otherTasks = prevState.filter(task => task.id !== id);
-            const taskToToggle = prevState.find(task => task.id === id);
-            const newStatus = taskToToggle!.status === "incomplete" ? "complete" : "incomplete";
-            return [
-                ...otherTasks,
-                { ...taskToToggle, status: newStatus }
-            ]
+            return prevState.map(task => {
+                if (task.id !== id) return task;
+                return {...task, status: task.status === "incomplete" ? "complete" : "incomplete"}
+            })
         })
     }
 
+    const handleSort = (key: keyof Task) => setSortTerm(key);
 
     return (
         <Container>
-            <PageHeader/>
+            <PageHeader priorities={prioritySum}/>
             <Header>
                 <Headline>To Do List</Headline>
                 <AddBtn><span>+</span> Add task</AddBtn>
                 <FilterToggle />
             </Header>
-            {Boolean(filteredList.length) && <Table list={filteredList} toggleComplete={toggleComplete}/>}
+            {Boolean(filteredList.length) && <Table list={filteredList}
+                                                    sortTerm={sortTerm}
+                                                    toggleComplete={toggleComplete}
+                                                    handleSort={handleSort}/>}
         </Container>
     )
 }

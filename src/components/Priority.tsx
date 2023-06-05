@@ -1,6 +1,7 @@
 import {ReactElement} from "react";
 import styled from "styled-components";
-import {Task} from "../App.tsx";
+
+import {Task} from "../types.ts";
 
 const PriorityDisplay = styled.div`
   font-weight: 400;
@@ -36,4 +37,4 @@ export default function Priority({level}: Props): ReactElement {
         default:
             return <High>High</High>
     }
-};
+}
