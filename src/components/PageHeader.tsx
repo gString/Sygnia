@@ -1,6 +1,6 @@
 import {ReactElement} from "react";
-
 import {Priorities} from "../types.ts";
+
 import {Header, PrioritiesDisplay, Priority, Title, User} from "./PageHeader.styles.ts";
 
 interface Props {

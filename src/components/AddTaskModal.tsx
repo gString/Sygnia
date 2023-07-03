@@ -1,5 +1,7 @@
-import {ReactElement, useMemo, useState} from "react";
+import React, {ReactElement, useMemo, useState} from "react";
+import {Task} from "../types.ts";
 
+import Arrow from '../assets/Vector 1.png';
 import {
     BlockingLayer,
     CloseBtn, Dropdown, Footer, FormBtn,
@@ -11,9 +13,7 @@ import {
     TaskText,
     AddBtn,
 } from "./AddTaskModal.styles.ts";
-import {High, Low, Medium} from "./Priority.tsx";
-import Arrow from '../assets/Vector 1.png';
-import {Task} from "../types.ts";
+import {High, Low, Medium} from "./Priority.styles.ts";
 
 
 interface Props {
@@ -48,7 +48,7 @@ export default function AddTaskModal({toggleModal, addTask}: Props): ReactElemen
             </ModalHeader>
             <ModalBody>
                 <label>Add a task</label>
-                <TaskText onChange={e => setText(e.target.value)} value={text} />
+                <TaskText onChange={(e:React.ChangeEvent<HTMLTextAreaElement>) => setText(e.target.value)} value={text} />
                 <PriorityBar>
                     <label>Priority</label>
                     <Dropdown.Root>
